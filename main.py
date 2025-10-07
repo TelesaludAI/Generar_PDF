@@ -34,17 +34,17 @@ def generar_documentos():
         doc.save(DOCX_FILE)
 
         ## Convertir a PDF con Pandoc
-        #try:
-        #    pypandoc.convert_file(
-        #        DOCX_FILE,
-        #        'pdf',
-        #        outputfile=PDF_FILE,
-        #        extra_args=['--pdf-engine=xelatex']
-        #    )
-        #except Exception as e:
-        #    raise HTTPException(status_code=500, detail=f"Error al convertir a PDF: {str(e)}")
+        try:
+            pypandoc.convert_file(
+                DOCX_FILE,
+                'pdf',
+                outputfile=PDF_FILE,
+                extra_args=['--pdf-engine=xelatex']
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error al convertir a PDF: {str(e)}")
 
-        #return {"message": "✅ Documentos generados correctamente"}
+        return {"message": "✅ Documentos generados correctamente"}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
