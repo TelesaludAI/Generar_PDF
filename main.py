@@ -39,7 +39,7 @@ def generar_documentos():
                 DOCX_FILE,
                 'pdf',
                 format='docx',
-                outputfile='output.pdf',
+                outputfile=PDF_FILE,
                 extra_args=['--standalone', '--pdf-engine=pdflatex']
             )
 
