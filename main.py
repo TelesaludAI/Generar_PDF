@@ -35,12 +35,14 @@ def generar_documentos():
 
         ## Convertir a PDF con Pandoc
         try:
-            pypandoc.convert_file(
+            pypandoc.convert_text(
                 DOCX_FILE,
                 'pdf',
-                outputfile=PDF_FILE,
-                extra_args=['--pdf-engine=xelatex']
+                format='docx',
+                outputfile='output.pdf',
+                extra_args=['--standalone', '--pdf-engine=pdflatex']
             )
+
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error al convertir a PDF: {str(e)}")
 
