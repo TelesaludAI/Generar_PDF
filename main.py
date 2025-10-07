@@ -1,68 +1,43 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from docx import Document
-from docx.shared import Inches
-import pypandoc
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 import os
 
-app = FastAPI(title="API de generación de documentos")
-
-DOCX_FILE = "documento_generado.docx"
-PDF_FILE = "documento_generado.pdf"
-FIRMA_IMG = "firma.png"
-
+app = FastAPI()
 
 @app.get("/")
-def home():
-    return {"message": "✅ API de generación de documentos con FastAPI activa"}
-
+def read_root():
+    return {"message": "Servidor en Railway funcionando correctamente ✅"}
 
 @app.get("/generar")
 def generar_documentos():
-    """Genera un documento Word y su versión en PDF."""
-    try:
-        doc = Document()
-        doc.add_heading("Informe de Servicio", level=1)
-        doc.add_paragraph("Este documento fue generado automáticamente desde Python con FastAPI.")
-        doc.add_paragraph("Firma del responsable:")
+    # Crear documento Word
+    doc = Document()
+    doc.add_heading("Ejemplo de Documento", level=1)
+    doc.add_paragraph("Este documento fue generado desde FastAPI y Python en Railway.")
+    
+    # Agregar firma
+    if os.path.exists("firma.png"):
+        doc.add_picture("firma.png", width=2000000)  # ~2 cm
+        doc.add_paragraph("Firma digital")
+    
+    docx_filename = "documento.docx"
+    pdf_filename = "documento.pdf"
+    doc.save(docx_filename)
 
-        if os.path.exists(FIRMA_IMG):
-            doc.add_picture(FIRMA_IMG, width=Inches(2))
-        else:
-            doc.add_paragraph("⚠️ Firma no disponible (imagen no encontrada).")
+    # Crear PDF con reportlab (texto plano)
+    c = canvas.Canvas(pdf_filename, pagesize=letter)
+    width, height = letter
+    c.setFont("Helvetica", 12)
+    c.drawString(100, height - 100, "Ejemplo de Documento")
+    c.drawString(100, height - 120, "Este documento fue generado desde FastAPI y Python en Railway.")
+    
+    if os.path.exists("firma.png"):
+        c.drawImage("firma.png", 100, height - 200, width=100, height=50)
+        c.drawString(100, height - 210, "Firma digital")
 
-        doc.save(DOCX_FILE)
+    c.save()
 
-        ## Convertir a PDF con Pandoc
-        try:
-            pypandoc.convert_text(
-                DOCX_FILE,
-                'pdf',
-                format='docx',
-                outputfile=PDF_FILE,
-                extra_args=['--standalone', '--pdf-engine=pdflatex']
-            )
-
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error al convertir a PDF: {str(e)}")
-
-        return {"message": "✅ Documentos generados correctamente"}
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/descargar/docx")
-def descargar_docx():
-    """Permite descargar el documento Word."""
-    if not os.path.exists(DOCX_FILE):
-        raise HTTPException(status_code=404, detail="El documento DOCX no existe")
-    return FileResponse(DOCX_FILE, media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document", filename=DOCX_FILE)
-
-
-@app.get("/descargar/pdf")
-def descargar_pdf():
-    """Permite descargar el documento PDF."""
-    if not os.path.exists(PDF_FILE):
-        raise HTTPException(status_code=404, detail="El documento PDF no existe")
-    return FileResponse(PDF_FILE, media_type="application/pdf", filename=PDF_FILE)
+    return FileResponse(pdf_filename, media_type="application/pdf", filename=pdf_filename)
