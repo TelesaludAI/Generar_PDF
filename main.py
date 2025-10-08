@@ -43,7 +43,7 @@ def upload_to_drive(filepath: str, filename: str):
 
 # === ENDPOINT PRINCIPAL ===
 @app.post("/")
-async def crear_documento(data: DocumentoData):
+async def root(data: DocumentoData):
     try:
         # Nombre temporal del archivo
         filename = f"{data.titulo.replace(' ', '_')}.docx"
@@ -75,7 +75,7 @@ async def crear_documento(data: DocumentoData):
 
 if __name__ == "__main__":
     try:
-        port = int(os.environ.get("PORT", 8000))
+        port = int(os.environ.get("PORT", 8080))
         uvicorn.run(app, host="0.0.0.0", port=port)
     except Exception as e:
         print(f"Error al iniciar Uvicorn: {e}")
