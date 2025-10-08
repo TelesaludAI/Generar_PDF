@@ -56,12 +56,14 @@ async def crear_documento(data: DocumentoData):
             doc.add_paragraph(f"Autor: {data.autor}")
         doc.save(filename)
 
+        print("Crear Documento")
         # Subir a Google Drive
         file_id, drive_link = upload_to_drive(filename, filename)
-
+        print("Enviar a Drive")
         # Eliminar archivo local
         os.remove(filename)
-
+        print("Eliminar archivo local")
+        
         return JSONResponse({
             "message": "✅ Documento creado y subido a Google Drive",
             "drive_file_id": file_id,
@@ -71,3 +73,9 @@ async def crear_documento(data: DocumentoData):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear o subir el documento: {str(e)}")
 
+if __name__ == "__main__":
+    try:
+        port = int(os.environ.get("PORT", 8000))
+        uvicorn.run(app, host="0.0.0.0", port=port)
+    except Exception as e:
+        print(f"Error al iniciar Uvicorn: {e}")
