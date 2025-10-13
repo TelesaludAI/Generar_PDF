@@ -51,26 +51,26 @@ def get_drive_service():
 
 @app.post("/")
 async def root():
-    try:
-        service = get_drive_service()
-        
-        # Subir archivo
-        file_metadata = {
-            'name': 'ejemplo.docx',
-            'parents': ['1E4brfQPnwurTivj8mjpdAtc_ByprLbNL'] ## FOLDER_ID
-        }
-        media = MediaFileUpload('ejemplo.docx', mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    #try:
+    service = get_drive_service()
     
-        file = service.files().create(
-            body=file_metadata,
-            media_body=media,
-            fields='id, webViewLink'
-        ).execute()
-    
-        print(f"✅ Archivo subido: {file.get('webViewLink')}")
+    # Subir archivo
+    file_metadata = {
+        'name': 'ejemplo.docx',
+        'parents': ['1E4brfQPnwurTivj8mjpdAtc_ByprLbNL'] ## FOLDER_ID
+    }
+    media = MediaFileUpload('ejemplo.docx', mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
 
-    except Exception as e:
-        return {"error": str(e)}
+    file = service.files().create(
+        body=file_metadata,
+        media_body=media,
+        fields='id, webViewLink'
+    ).execute()
+
+    print(f"✅ Archivo subido: {file.get('webViewLink')}")
+
+    #except Exception as e:
+    #    return {"error": str(e)}
 
 if __name__ == "__main__":
     try:
