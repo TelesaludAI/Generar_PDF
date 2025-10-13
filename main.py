@@ -8,70 +8,69 @@ from googleapiclient.http import MediaFileUpload
 import os
 import aiofiles
 
+
+from fastapi import FastAPI, UploadFile, Form
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseUpload
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+import base64
+import pickle
+import io
+import json
+import os
+
+app = FastAPI()
+
 # === CONFIGURACIÓN ===
-SERVICE_ACCOUNT_FILE = "credentials.json"  # archivo JSON de la cuenta de servicio
 FOLDER_ID = "1E4brfQPnwurTivj8mjpdAtc_ByprLbNL"    # ID de la carpeta de destino en Drive
+SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
-SCOPES = ["https://www.googleapis.com/auth/drive.file"]
+def get_drive_service():
+    # Decodifica credentials.json y token.pkl desde variables de entorno
+    credentials_b64 = os.getenv("GOOGLE_CREDENTIALS_BASE64")
+    token_b64 = os.getenv("GOOGLE_TOKEN_BASE64")
 
-app = FastAPI(title="Generador de documentos en Drive")
+    if not credentials_b64 or not token_b64:
+        raise Exception("⚠️ Variables de entorno no configuradas correctamente.")
 
-# === MODELO DE ENTRADA ===
-class DocumentoData(BaseModel):
-    titulo: str
-    contenido: str
-    autor: str | None = None
+    # Reconstruye los archivos en memoria
+    credentials_data = json.loads(base64.b64decode(credentials_b64).decode('utf-8'))
+    creds = pickle.loads(base64.b64decode(token_b64))
 
-# === FUNCIÓN AUXILIAR ===
-def upload_to_drive(filepath: str, filename: str):
-    """Sube un archivo a Google Drive usando una cuenta de servicio"""
-    creds = service_account.Credentials.from_service_account_file(
-        SERVICE_ACCOUNT_FILE, scopes=SCOPES
-    )
-    service = build("drive", "v3", credentials=creds)
+    # Refresca el token si está vencido
+    if not creds.valid:
+        if creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            raise Exception("⚠️ Token inválido o caducado. Genera un nuevo token.pkl")
 
-    file_metadata = {"name": filename, "parents": [FOLDER_ID]}
-    media = MediaFileUpload(filepath, mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    # Crea el cliente de Google Drive
+    service = build('drive', 'v3', credentials=creds)
+    return service
 
-    file = service.files().create(
-        body=file_metadata,
-        media_body=media,
-        fields="id, webViewLink"
-    ).execute()
-
-    return file.get("id"), file.get("webViewLink")
-
-# === ENDPOINT PRINCIPAL ===
 @app.post("/")
-async def root(data: DocumentoData):
-    #try:
-    # Nombre temporal del archivo
-    filename = f"{data.titulo.replace(' ', '_')}.docx"
+async def root():
+    try:
+        service = get_drive_service()
+        
+        # Subir archivo
+        file_metadata = {
+            'name': 'ejemplo.docx',
+            'parents': ['1E4brfQPnwurTivj8mjpdAtc_ByprLbNL'] ## FOLDER_ID
+        }
+        media = MediaFileUpload('ejemplo.docx', mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
     
-    # Crear el documento DOCX
-    doc = Document()
-    doc.add_heading(data.titulo, level=1)
-    doc.add_paragraph(data.contenido)
-    if data.autor:
-        doc.add_paragraph(f"Autor: {data.autor}")
-    doc.save(filename)
-
-    print("Crear Documento")
-    # Subir a Google Drive
-    file_id, drive_link = upload_to_drive(filename, filename)
-    print("Enviar a Drive")
-    # Eliminar archivo local
-    os.remove(filename)
-    print("Eliminar archivo local")
+        file = service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id, webViewLink'
+        ).execute()
     
-    return JSONResponse({
-        "message": "✅ Documento creado y subido a Google Drive",
-        "drive_file_id": file_id,
-        "drive_link": drive_link
-    })
+        print(f"✅ Archivo subido: {file.get('webViewLink')}")
 
-    #except Exception as e:
-    #    raise HTTPException(status_code=500, detail=f"Error al crear o subir el documento: {str(e)}")
+    except Exception as e:
+        return {"error": str(e)}
 
 if __name__ == "__main__":
     try:
