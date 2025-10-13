@@ -44,34 +44,34 @@ def upload_to_drive(filepath: str, filename: str):
 # === ENDPOINT PRINCIPAL ===
 @app.post("/")
 async def root(data: DocumentoData):
-    try:
-        # Nombre temporal del archivo
-        filename = f"{data.titulo.replace(' ', '_')}.docx"
-        
-        # Crear el documento DOCX
-        doc = Document()
-        doc.add_heading(data.titulo, level=1)
-        doc.add_paragraph(data.contenido)
-        if data.autor:
-            doc.add_paragraph(f"Autor: {data.autor}")
-        doc.save(filename)
+    #try:
+    # Nombre temporal del archivo
+    filename = f"{data.titulo.replace(' ', '_')}.docx"
+    
+    # Crear el documento DOCX
+    doc = Document()
+    doc.add_heading(data.titulo, level=1)
+    doc.add_paragraph(data.contenido)
+    if data.autor:
+        doc.add_paragraph(f"Autor: {data.autor}")
+    doc.save(filename)
 
-        print("Crear Documento")
-        # Subir a Google Drive
-        file_id, drive_link = upload_to_drive(filename, filename)
-        print("Enviar a Drive")
-        # Eliminar archivo local
-        os.remove(filename)
-        print("Eliminar archivo local")
-        
-        return JSONResponse({
-            "message": "✅ Documento creado y subido a Google Drive",
-            "drive_file_id": file_id,
-            "drive_link": drive_link
-        })
+    print("Crear Documento")
+    # Subir a Google Drive
+    file_id, drive_link = upload_to_drive(filename, filename)
+    print("Enviar a Drive")
+    # Eliminar archivo local
+    os.remove(filename)
+    print("Eliminar archivo local")
+    
+    return JSONResponse({
+        "message": "✅ Documento creado y subido a Google Drive",
+        "drive_file_id": file_id,
+        "drive_link": drive_link
+    })
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al crear o subir el documento: {str(e)}")
+    #except Exception as e:
+    #    raise HTTPException(status_code=500, detail=f"Error al crear o subir el documento: {str(e)}")
 
 if __name__ == "__main__":
     try:
