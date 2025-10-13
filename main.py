@@ -51,9 +51,11 @@ def get_drive_service():
 
 @app.post("/")
 async def root():
+    print("Parte 1")
     #try:
     service = get_drive_service()
     
+    print("Parte 2")
     # Subir archivo
     file_metadata = {
         'name': 'ejemplo.docx',
@@ -61,6 +63,7 @@ async def root():
     }
     media = MediaFileUpload('ejemplo.docx', mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
 
+    print("Parte 3")
     file = service.files().create(
         body=file_metadata,
         media_body=media,
